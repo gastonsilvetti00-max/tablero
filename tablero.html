@@ -2112,6 +2112,82 @@ function crearOActualizar(canvasId, config){
   chartInstances[canvasId] = new Chart(ctx, config);
 }
 
+let tortaAnio = new Date().getFullYear();
+
+function grafTortaAnio(d){
+  tortaAnio += d;
+  document.getElementById('torta-anio-label').textContent = tortaAnio;
+  renderTorta();
+}
+
+function renderTorta(){
+  const mesVal = parseInt(document.getElementById('torta-mes-sel').value);
+  const CATS_GASTO_TORTA = [...CATS_REGULAR, ...CATS_INUSUAL, ...CATS_AHORRO];
+  const COLORES = ['#6a9fd8','#5eb88a','#c8a96e','#9b7ec8','#e0604a','#e8a87c','#5bc4c4','#e8b45a','#a8d8a8','#d4a0c8','#f0c070','#80b4d8'];
+
+  const movsFiltrados = movimientos.filter(m => {
+    const [a, mes] = m.fecha.split('-').map(Number);
+    if(a !== tortaAnio) return false;
+    if(mesVal >= 0 && (mes - 1) !== mesVal) return false;
+    return CATS_GASTO_TORTA.includes(m.cat);
+  });
+
+  const porCat = {};
+  CATS_GASTO_TORTA.forEach(c => { porCat[c] = 0; });
+  movsFiltrados.forEach(m => { porCat[m.cat] = (porCat[m.cat]||0) + m.precio; });
+
+  const cats = Object.entries(porCat).filter(([,v]) => v > 0).sort((a,b) => b[1]-a[1]);
+  const total = cats.reduce((s,[,v]) => s+v, 0);
+
+  document.getElementById('torta-total').textContent = total ? '$'+Math.round(total/1000)+'k' : '$0';
+
+  if(!cats.length){
+    document.getElementById('torta-leyenda').innerHTML = '<div style="color:var(--text3);font-size:13px">Sin gastos en este período</div>';
+    return;
+  }
+
+  crearOActualizar('graf-torta', {
+    type: 'doughnut',
+    data: {
+      labels: cats.map(([c]) => c),
+      datasets:[{
+        data: cats.map(([,v]) => v),
+        backgroundColor: cats.map((_,i) => COLORES[i % COLORES.length]),
+        borderColor: '#0f0f11',
+        borderWidth: 2,
+        hoverOffset: 8
+      }]
+    },
+    options:{
+      responsive: true,
+      cutout: '65%',
+      plugins:{
+        legend:{ display: false },
+        tooltip:{
+          callbacks:{
+            label: ctx => {
+              const pct = ((ctx.raw/total)*100).toFixed(1);
+              return ` ${ctx.label}: $${ctx.raw.toLocaleString('es-AR')} (${pct}%)`;
+            }
+          },
+          backgroundColor:'rgba(15,15,17,.95)', titleColor:'#f0ede8',
+          bodyColor:'#8a8782', borderColor:'rgba(255,255,255,.1)', borderWidth:1, padding:10, cornerRadius:6
+        }
+      }
+    }
+  });
+
+  document.getElementById('torta-leyenda').innerHTML = cats.map(([c,v],i) => {
+    const pct = ((v/total)*100).toFixed(1);
+    return `<div style="display:flex;align-items:center;gap:8px;font-size:12px">
+      <div style="width:10px;height:10px;border-radius:50%;background:${COLORES[i%COLORES.length]};flex-shrink:0"></div>
+      <div style="flex:1;color:var(--text2)">${c}</div>
+      <div style="color:var(--text3)">${pct}%</div>
+      <div style="color:var(--accent);font-size:11px">$${Math.round(v/1000)}k</div>
+    </div>`;
+  }).join('');
+}
+
 function renderGraficos(){
   document.getElementById('graf-anio-label').textContent = grafAnio;
 
@@ -2189,85 +2265,11 @@ function renderGraficos(){
     });
 
     // ── Torta distribución de gastos ────────────────────────────────────
-    let tortaAnio = grafAnio;
+    tortaAnio = grafAnio;
     document.getElementById('torta-anio-label').textContent = tortaAnio;
-
-    function grafTortaAnio(d){
-      tortaAnio += d;
-      document.getElementById('torta-anio-label').textContent = tortaAnio;
-      renderTorta();
-    }
-
-    function renderTorta(){
-      const mesVal = parseInt(document.getElementById('torta-mes-sel').value);
-      const CATS_GASTO_TORTA = [...CATS_REGULAR, ...CATS_INUSUAL, ...CATS_AHORRO];
-      const COLORES = ['#6a9fd8','#5eb88a','#c8a96e','#9b7ec8','#e0604a','#e8a87c','#5bc4c4','#e8b45a','#a8d8a8','#d4a0c8','#f0c070','#80b4d8'];
-
-      let movsFiltrados = movimientos.filter(m => {
-        const [a, mes] = m.fecha.split('-').map(Number);
-        if(a !== tortaAnio) return false;
-        if(mesVal >= 0 && (mes - 1) !== mesVal) return false;
-        return CATS_GASTO_TORTA.includes(m.cat);
-      });
-
-      // Agrupar por categoría
-      const porCat = {};
-      CATS_GASTO_TORTA.forEach(c => { porCat[c] = 0; });
-      movsFiltrados.forEach(m => { porCat[m.cat] = (porCat[m.cat]||0) + m.precio; });
-
-      // Filtrar categorías con gasto > 0
-      const cats = Object.entries(porCat).filter(([,v]) => v > 0).sort((a,b) => b[1]-a[1]);
-      const total = cats.reduce((s,[,v]) => s+v, 0);
-
-      document.getElementById('torta-total').textContent = total ? '$'+Math.round(total/1000)+'k' : '$0';
-
-      if(!cats.length){
-        document.getElementById('torta-leyenda').innerHTML = '<div style="color:var(--text3);font-size:13px">Sin gastos en este período</div>';
-        return;
-      }
-
-      crearOActualizar('graf-torta', {
-        type: 'doughnut',
-        data: {
-          labels: cats.map(([c]) => c),
-          datasets:[{
-            data: cats.map(([,v]) => v),
-            backgroundColor: cats.map((_,i) => COLORES[i % COLORES.length]),
-            borderColor: '#0f0f11',
-            borderWidth: 2,
-            hoverOffset: 8
-          }]
-        },
-        options:{
-          responsive: true,
-          cutout: '65%',
-          plugins:{
-            legend:{ display: false },
-            tooltip:{
-              callbacks:{
-                label: ctx => {
-                  const pct = ((ctx.raw/total)*100).toFixed(1);
-                  return ` ${ctx.label}: $${ctx.raw.toLocaleString('es-AR')} (${pct}%)`;
-                }
-              },
-              backgroundColor:'rgba(15,15,17,.95)', titleColor:'#f0ede8',
-              bodyColor:'#8a8782', borderColor:'rgba(255,255,255,.1)', borderWidth:1, padding:10, cornerRadius:6
-            }
-          }
-        }
-      });
-
-      // Leyenda custom
-      document.getElementById('torta-leyenda').innerHTML = cats.map(([c,v],i) => {
-        const pct = ((v/total)*100).toFixed(1);
-        return `<div style="display:flex;align-items:center;gap:8px;font-size:12px">
-          <div style="width:10px;height:10px;border-radius:50%;background:${COLORES[i%COLORES.length]};flex-shrink:0"></div>
-          <div style="flex:1;color:var(--text2)">${c}</div>
-          <div style="color:var(--text3)">${pct}%</div>
-          <div style="color:var(--accent);font-size:11px">$${Math.round(v/1000)}k</div>
-        </div>`;
-      }).join('');
-    }
+    // Setear mes actual por defecto
+    const mesSel = document.getElementById('torta-mes-sel');
+    mesSel.value = new Date().getMonth();
 
     renderTorta();
 
