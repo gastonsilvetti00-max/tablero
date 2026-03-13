@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f0f11">
+<title>Cargar movimiento</title>
+<style>
+  :root{
+    --bg:#0f0f11;--surface:#17171a;--surface2:#1e1e22;
+    --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+    --text:#f0ede8;--text2:#8a8782;--text3:#5a5856;
+    --accent:#c8a96e;--accent2:#e8c98e;
+    --green:#5eb88a;--red:#e0604a;--blue:#6a9fd8;
+    --radius:14px;--radius-sm:10px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'DM Sans','Segoe UI',sans-serif;
+    background:var(--bg);color:var(--text);
+    min-height:100vh;font-size:16px;
+    display:flex;flex-direction:column;
+  }
+
+  /* Header */
+  .header{
+    background:var(--surface);
+    border-bottom:1px solid var(--border);
+    padding:20px 20px 16px;
+    display:flex;align-items:center;gap:12px;
+    position:sticky;top:0;z-index:10;
+  }
+  .logo{font-size:20px;color:var(--accent);}
+  .header-title{font-size:17px;font-weight:500;color:var(--text);}
+  .header-sub{font-size:12px;color:var(--text3);}
+
+  /* Main */
+  .main{flex:1;padding:20px 16px 40px;display:flex;flex-direction:column;gap:16px;max-width:480px;margin:0 auto;width:100%;}
+
+  /* Cards */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+
+  /* Form groups */
+  .form-group{padding:0 16px;}
+  .form-group+.form-group{border-top:1px solid var(--border);}
+  .form-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);padding:12px 0 6px;display:block;}
+  .form-input,.form-select{
+    width:100%;background:transparent;border:none;outline:none;
+    color:var(--text);font-size:17px;font-family:inherit;
+    padding:0 0 12px;caret-color:var(--accent);
+  }
+  .form-input::placeholder{color:var(--text3);}
+  .form-input[type="number"]{-moz-appearance:textfield;}
+  .form-input[type="number"]::-webkit-inner-spin-button,
+  .form-input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none;}
+
+  /* Category grid */
+  .cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);}
+  .cat-btn{
+    background:var(--surface);padding:14px 12px;
+    font-size:14px;color:var(--text2);cursor:pointer;
+    border:none;font-family:inherit;text-align:left;
+    transition:background .12s;
+    display:flex;align-items:center;gap:8px;
+  }
+  .cat-btn:active{background:var(--surface2);}
+  .cat-btn.selected{background:rgba(200,169,110,.12);color:var(--accent);}
+  .cat-btn .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .cat-grupo-label{
+    grid-column:1/-1;
+    background:var(--bg);padding:8px 12px 6px;
+    font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);
+    border-top:1px solid var(--border);
+  }
+  .cat-grupo-label:first-child{border-top:none;}
+
+  /* Amount display */
+  .monto-display{
+    font-size:40px;font-weight:300;color:var(--text);
+    padding:12px 16px 4px;letter-spacing:-.02em;
+    min-height:64px;display:flex;align-items:center;
+  }
+  .monto-display.vacio{color:var(--text3);}
+  .monto-prefix{font-size:24px;color:var(--text3);margin-right:4px;}
+
+  /* Teclado numérico */
+  .teclado{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);}
+  .tecla{
+    background:var(--surface);padding:18px 8px;
+    font-size:22px;text-align:center;cursor:pointer;
+    border:none;font-family:inherit;color:var(--text);
+    transition:background .1s;user-select:none;
+  }
+  .tecla:active{background:var(--surface2);}
+  .tecla.delete{font-size:18px;color:var(--text2);}
+  .tecla.zero{grid-column:span 1;}
+
+  /* Submit */
+  .btn-submit{
+    background:var(--accent);color:#0f0f11;border:none;
+    padding:18px;border-radius:var(--radius);
+    font-size:17px;font-weight:600;font-family:inherit;
+    cursor:pointer;width:100%;transition:opacity .15s;
+    letter-spacing:.02em;
+  }
+  .btn-submit:active{opacity:.8;}
+  .btn-submit:disabled{opacity:.4;cursor:default;}
+
+  /* Toast */
+  .toast{
+    position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+    background:var(--surface2);border:1px solid var(--border2);
+    color:var(--text);padding:12px 20px;border-radius:var(--radius-sm);
+    font-size:14px;white-space:nowrap;z-index:100;
+    transition:transform .3s cubic-bezier(.34,1.56,.64,1);
+    display:flex;align-items:center;gap:8px;
+  }
+  .toast.show{transform:translateX(-50%) translateY(0);}
+  .toast-icon{font-size:16px;}
+
+  /* Historial reciente */
+  .hist-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);}
+  .hist-item:last-child{border-bottom:none;}
+  .hist-cat{font-size:10px;padding:2px 8px;border-radius:20px;}
+  .hist-info{flex:1;min-width:0;}
+  .hist-nombre{font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .hist-fecha{font-size:11px;color:var(--text3);}
+  .hist-monto{font-size:14px;font-weight:500;}
+  .seccion-titulo{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);padding:0 0 10px;}
+
+  /* Selector de fecha */
+  input[type="date"]{color-scheme:dark;}
+
+  /* Tab bar */
+  .tabbar{
+    position:fixed;bottom:0;left:0;right:0;
+    background:var(--surface);border-top:1px solid var(--border);
+    display:flex;height:60px;z-index:20;
+    max-width:480px;margin:0 auto;
+  }
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;color:var(--text3);font-size:10px;border:none;background:none;font-family:inherit;}
+  .tab.on{color:var(--accent);}
+  .tab-icon{font-size:20px;}
+  .page{display:none;padding-bottom:70px;}
+  .page.active{display:block;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">✦</div>
+  <div>
+    <div class="header-title">Movimiento</div>
+    <div class="header-sub" id="hoy-label"></div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ══ PÁGINA: NUEVO MOVIMIENTO ══ -->
+  <div class="page active" id="page-nuevo">
+
+    <!-- Monto -->
+    <div class="card">
+      <div class="monto-display vacio" id="monto-display">
+        <span class="monto-prefix">$</span><span id="monto-val">0</span>
+      </div>
+      <div class="teclado">
+        <button class="tecla" onclick="tecla('7')">7</button>
+        <button class="tecla" onclick="tecla('8')">8</button>
+        <button class="tecla" onclick="tecla('9')">9</button>
+        <button class="tecla" onclick="tecla('4')">4</button>
+        <button class="tecla" onclick="tecla('5')">5</button>
+        <button class="tecla" onclick="tecla('6')">6</button>
+        <button class="tecla" onclick="tecla('1')">1</button>
+        <button class="tecla" onclick="tecla('2')">2</button>
+        <button class="tecla" onclick="tecla('3')">3</button>
+        <button class="tecla" onclick="tecla('000')">000</button>
+        <button class="tecla" onclick="tecla('0')">0</button>
+        <button class="tecla delete" onclick="borrar()">⌫</button>
+      </div>
+    </div>
+
+    <!-- Descripción y fecha -->
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label">Ítem / Descripción</label>
+        <input class="form-input" id="inp-item" placeholder="Ej: Super, Nafta, Sueldo…" autocomplete="off"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fecha</label>
+        <input class="form-input" id="inp-fecha" type="date"/>
+      </div>
+    </div>
+
+    <!-- Categorías -->
+    <div class="card">
+      <div style="padding:12px 16px 8px">
+        <div class="seccion-titulo">Categoría</div>
+      </div>
+      <div class="cat-grid" id="cat-grid"></div>
+    </div>
+
+    <!-- Guardar -->
+    <button class="btn-submit" id="btn-guardar" onclick="guardar()">Guardar movimiento</button>
+
+  </div><!-- /page-nuevo -->
+
+  <!-- ══ PÁGINA: HISTORIAL ══ -->
+  <div class="page" id="page-historial">
+    <div style="padding-top:4px">
+      <div class="seccion-titulo">Últimos movimientos</div>
+    </div>
+    <div class="card">
+      <div id="hist-list"></div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- Tab bar -->
+<div class="tabbar">
+  <button class="tab on" id="tab-nuevo" onclick="cambiarTab('nuevo')">
+    <span class="tab-icon">＋</span>
+    <span>Nuevo</span>
+  </button>
+  <button class="tab" id="tab-historial" onclick="cambiarTab('historial')">
+    <span class="tab-icon">☰</span>
+    <span>Historial</span>
+  </button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toast-icon">✓</span>
+  <span id="toast-txt"></span>
+</div>
+
+<script>
+// ── Categorías ──────────────────────────────────────────────────────────
+const CATEGORIAS = [
+  { grupo:'Ingresos', cats:[
+    { nombre:'Sueldo',                   color:'#5eb88a', dot:'#5eb88a' },
+    { nombre:'Ingresos extraordinarios', color:'#5eb88a', dot:'#5eb88a' },
+    { nombre:'Intereses',                color:'#5eb88a', dot:'#5eb88a' },
+  ]},
+  { grupo:'Ahorros', cats:[
+    { nombre:'Ahorros',       color:'#c8a96e', dot:'#c8a96e' },
+  ]},
+  { grupo:'Regulares', cats:[
+    { nombre:'Casa',          color:'#6a9fd8', dot:'#6a9fd8' },
+    { nombre:'Transporte',    color:'#6a9fd8', dot:'#6a9fd8' },
+    { nombre:'Comida',        color:'#6a9fd8', dot:'#6a9fd8' },
+    { nombre:'Educación',     color:'#6a9fd8', dot:'#6a9fd8' },
+    { nombre:'Equipo',        color:'#6a9fd8', dot:'#6a9fd8' },
+    { nombre:'Necesidades',   color:'#6a9fd8', dot:'#6a9fd8' },
+    { nombre:'Salud',         color:'#6a9fd8', dot:'#6a9fd8' },
+    { nombre:'Cuotas',        color:'#6a9fd8', dot:'#6a9fd8' },
+  ]},
+  { grupo:'Inusuales', cats:[
+    { nombre:'Inusuales',     color:'#9b7ec8', dot:'#9b7ec8' },
+    { nombre:'Actividades',   color:'#9b7ec8', dot:'#9b7ec8' },
+  ]},
+];
+
+// ── Estado ──────────────────────────────────────────────────────────────
+let montoStr = '';
+let catSeleccionada = null;
+let toastTimer = null;
+
+// ── Storage compartido con tablero.html ─────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// PASO 4 — Pegá tu firebaseConfig acá (igual que en tablero.html)
+// ══════════════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyAxRXz7Z-Xmp5V2DM4M9brS7sOMZdgQCLg",
+  authDomain: "mi-tablero-19307.firebaseapp.com",
+  projectId: "mi-tablero-19307",
+  storageBucket: "mi-tablero-19307.firebasestorage.app",
+  messagingSenderId: "73667620732",
+  appId: "1:73667620732:web:b64d26ea4a64c2ba59bef9"
+};
+// ══════════════════════════════════════════════════════════════════
+
+const FIREBASE_ACTIVE = firebaseConfig.apiKey !== "";
+let db = null;
+
+async function initFirebase(){
+  if(!FIREBASE_ACTIVE) return;
+  try {
+    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const { getFirestore }  = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    toast('☁', 'Conectado a la nube ✓');
+  } catch(e){ console.warn('Firebase:', e); }
+}
+
+async function cloudSaveMovs(arr){
+  if(!FIREBASE_ACTIVE || !db) return;
+  try {
+    const { doc, setDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    await setDoc(doc(db,'tablero','tb_movs'), { value: arr });
+  } catch(e){ console.warn('Cloud save:', e); }
+}
+
+function loadMovs(){ try{ return JSON.parse(localStorage.getItem('tb_movs')||'[]'); }catch(e){ return []; }}
+function saveMovs(arr){ localStorage.setItem('tb_movs', JSON.stringify(arr)); cloudSaveMovs(arr); }
+
+function uid(){ return Math.random().toString(36).slice(2,10); }
+
+// ── Init ────────────────────────────────────────────────────────────────
+const hoy = new Date();
+const HOY_STR = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
+const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+document.getElementById('hoy-label').textContent = `${DIAS[hoy.getDay()]}, ${hoy.getDate()} de ${MESES[hoy.getMonth()]}`;
+document.getElementById('inp-fecha').value = HOY_STR;
+
+// Renderizar grilla de categorías
+const grid = document.getElementById('cat-grid');
+CATEGORIAS.forEach(grupo => {
+  const label = document.createElement('div');
+  label.className = 'cat-grupo-label';
+  label.textContent = grupo.grupo;
+  grid.appendChild(label);
+  grupo.cats.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-btn';
+    btn.id = 'cat-'+cat.nombre.replace(/\s/g,'_');
+    btn.innerHTML = `<div class="dot" style="background:${cat.dot}"></div>${cat.nombre}`;
+    btn.onclick = () => selCat(cat.nombre);
+    grid.appendChild(btn);
+  });
+});
+
+// ── Teclado ──────────────────────────────────────────────────────────────
+function tecla(v){
+  if(montoStr === '0') montoStr = '';
+  if(montoStr.length >= 12) return;
+  montoStr += v;
+  actualizarMonto();
+}
+function borrar(){
+  montoStr = montoStr.slice(0,-1);
+  actualizarMonto();
+}
+function actualizarMonto(){
+  const display = document.getElementById('monto-display');
+  const val = document.getElementById('monto-val');
+  if(!montoStr || montoStr === '0'){
+    val.textContent = '0';
+    display.classList.add('vacio');
+  } else {
+    const num = parseInt(montoStr);
+    val.textContent = num.toLocaleString('es-AR');
+    display.classList.remove('vacio');
+  }
+}
+
+// ── Categoría ────────────────────────────────────────────────────────────
+function selCat(nombre){
+  catSeleccionada = nombre;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
+  const btn = document.getElementById('cat-'+nombre.replace(/\s/g,'_'));
+  if(btn) btn.classList.add('selected');
+  // scroll to bottom suave
+  setTimeout(() => document.getElementById('btn-guardar').scrollIntoView({behavior:'smooth',block:'nearest'}), 100);
+}
+
+// ── Guardar ──────────────────────────────────────────────────────────────
+function guardar(){
+  const precio = parseInt(montoStr);
+  const item   = document.getElementById('inp-item').value.trim();
+  const fecha  = document.getElementById('inp-fecha').value;
+
+  if(!precio || precio <= 0){ toast('⚠', 'Ingresá un monto'); return; }
+  if(!item){ document.getElementById('inp-item').focus(); toast('⚠', 'Escribí un ítem'); return; }
+  if(!catSeleccionada){ toast('⚠', 'Elegí una categoría'); return; }
+  if(!fecha){ toast('⚠', 'Seleccioná la fecha'); return; }
+
+  const movs = loadMovs();
+  const nuevo = { id: uid(), fecha, precio, item, cat: catSeleccionada };
+  movs.unshift(nuevo);
+  saveMovs(movs);
+
+  toast('✓', `"${item}" guardado en ${catSeleccionada}`);
+  resetForm();
+  renderHistorial();
+}
+
+function resetForm(){
+  montoStr = '';
+  actualizarMonto();
+  document.getElementById('inp-item').value = '';
+  document.getElementById('inp-fecha').value = HOY_STR;
+  catSeleccionada = null;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('selected'));
+}
+
+// ── Toast ────────────────────────────────────────────────────────────────
+function toast(icon, txt){
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-txt').textContent = txt;
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── Historial ────────────────────────────────────────────────────────────
+const CATS_INGRESO = ['Sueldo','Ingresos extraordinarios','Intereses'];
+const CATS_AHORRO  = ['Ahorros'];
+const CATS_REGULAR = ['Casa','Transporte','Comida','Educación','Equipo','Necesidades','Salud','Cuotas'];
+const COLORES_TIPO = { ingreso:'#5eb88a', ahorro:'#c8a96e', regular:'#6a9fd8', inusual:'#9b7ec8' };
+const BG_TIPO = { ingreso:'rgba(94,184,138,.15)', ahorro:'rgba(200,169,110,.15)', regular:'rgba(106,159,216,.15)', inusual:'rgba(155,126,200,.15)' };
+
+function tipoCat(cat){
+  if(CATS_INGRESO.includes(cat)) return 'ingreso';
+  if(CATS_AHORRO.includes(cat))  return 'ahorro';
+  if(CATS_REGULAR.includes(cat)) return 'regular';
+  return 'inusual';
+}
+
+function renderHistorial(){
+  const movs = loadMovs().slice(0,30);
+  const cont = document.getElementById('hist-list');
+  if(!movs.length){
+    cont.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);font-size:14px">Sin movimientos todavía.</div>';
+    return;
+  }
+  cont.innerHTML = movs.map(m => {
+    const t = tipoCat(m.cat);
+    const esPos = t === 'ingreso' || t === 'ahorro';
+    const d = new Date(m.fecha+'T00:00:00');
+    const fstr = `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}`;
+    return `<div class="hist-item">
+      <div>
+        <div class="hist-cat" style="background:${BG_TIPO[t]};color:${COLORES_TIPO[t]}">${m.cat}</div>
+      </div>
+      <div class="hist-info">
+        <div class="hist-nombre">${m.item}</div>
+        <div class="hist-fecha">${fstr}</div>
+      </div>
+      <div class="hist-monto" style="color:${esPos?'var(--green)':'var(--red)'}">${esPos?'+':'-'}$${m.precio.toLocaleString('es-AR')}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Tabs ─────────────────────────────────────────────────────────────────
+function cambiarTab(tab){
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.getElementById('page-'+tab).classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('on');
+  if(tab === 'historial') renderHistorial();
+}
+
+renderHistorial();
+initFirebase();
+</script>
+</body>
+</html>
