@@ -1010,13 +1010,32 @@ async function initFirebase(){
     const app = initializeApp(firebaseConfig);
     db = getFirestore(app);
     // Listen for real-time changes from other devices
-    const KEYS = ['tb_metas','tb_tareas','tb_movs','tb_eventos'];
+    const KEYS = ['tb_metas','tb_tareas','tb_movs','tb_eventos','tb_notas'];
+    // Seed initial data if Firebase is empty
+    const initialData = {
+      'tb_metas': metas,
+      'tb_tareas': tareas,
+      'tb_movs': movimientos,
+      'tb_eventos': eventos,
+      'tb_notas': notas
+    };
+
+    // Check if already seeded
+    const seedSnap = await getDoc(doc(db,'tablero','_seeded'));
+    if(!seedSnap.exists()){
+      // First time — push all initial data to Firebase
+      for(const k of KEYS){
+        await setDoc(doc(db,'tablero',k), { value: initialData[k] });
+      }
+      await setDoc(doc(db,'tablero','_seeded'), { value: true });
+      notif('☁', 'Datos cargados a la nube ✓');
+    }
+
     KEYS.forEach(k => {
       onSnapshot(doc(db,'tablero',k), snap => {
         if(!snap.exists()) return;
         const data = snap.data().value;
         try { localStorage.setItem(k, JSON.stringify(data)); } catch{}
-        // Refresh active view
         if(k==='tb_metas')  { metas=data; renderMetas(); if(paginaActual==='metas') renderMetasFull(); if(paginaActual==='progreso') renderProgreso(); }
         if(k==='tb_tareas') { tareas=data; renderTareas(); if(paginaActual==='tareas') renderTareasFull(); }
         if(k==='tb_movs')   { movimientos=data; renderTabFin(); if(paginaActual==='finanzas') renderMovimientos(); if(paginaActual==='fin-mensual') renderFinMensual(); if(paginaActual==='fin-anual') renderFinAnual(); if(paginaActual==='fin-graficos') renderGraficos(); }
