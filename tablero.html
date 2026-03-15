@@ -367,6 +367,35 @@
   .pvr-total-row.over{background:rgba(224,96,74,.08);border:1px solid rgba(224,96,74,.2);}
   .pvr-sin-presup{font-size:13px;color:var(--text3);padding:12px 0;text-align:center;}
 
+  /* ── DEUDAS ── */
+  .deuda-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;display:flex;flex-direction:column;gap:14px;}
+  .deuda-header{display:flex;justify-content:space-between;align-items:flex-start;}
+  .deuda-nombre{font-size:16px;font-family:'Playfair Display',serif;color:var(--text);}
+  .deuda-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .deuda-stat{display:flex;flex-direction:column;gap:3px;}
+  .deuda-stat-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+  .deuda-stat-val{font-size:15px;font-family:'Playfair Display',serif;}
+  .deuda-progress-wrap{display:flex;flex-direction:column;gap:6px;}
+  .deuda-progress-track{height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;}
+  .deuda-progress-fill{height:100%;border-radius:4px;transition:width .6s ease;}
+  .deuda-progress-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);}
+  .deuda-empty{text-align:center;padding:40px 0;color:var(--text3);}
+
+  /* ── AHORROS/INVERSIONES ── */
+  .inv-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;display:flex;flex-direction:column;gap:14px;}
+  .inv-header{display:flex;justify-content:space-between;align-items:flex-start;}
+  .inv-nombre{font-size:16px;font-family:'Playfair Display',serif;color:var(--text);}
+  .inv-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .inv-stat{display:flex;flex-direction:column;gap:3px;}
+  .inv-stat-label{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);}
+  .inv-stat-val{font-size:15px;font-family:'Playfair Display',serif;color:var(--accent);}
+  .sim-tabla{width:100%;border-collapse:collapse;font-size:12px;}
+  .sim-tabla th{text-align:left;padding:6px 8px;color:var(--text3);font-weight:400;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.06em;}
+  .sim-tabla td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text2);}
+  .sim-tabla tr:last-child td{border-bottom:none;color:var(--accent);font-weight:500;}
+  .sim-tabla .pos{color:var(--green);}
+  .inv-empty{text-align:center;padding:40px 0;color:var(--text3);}
+
   /* ── ASISTENTE IA ── */
   .chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 180px);min-height:400px;}
   .chat-msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:4px 0 16px;scroll-behavior:smooth;}
@@ -426,6 +455,8 @@
       <div class="nav-item" data-page="fin-anual" onclick="irA('fin-anual')"><span class="nav-icon">▦</span> Vista anual</div>
       <div class="nav-item" data-page="fin-graficos" onclick="irA('fin-graficos')"><span class="nav-icon">◱</span> Gráficos</div>
       <div class="nav-item" data-page="presupuesto" onclick="irA('presupuesto')"><span class="nav-icon">◧</span> Presupuesto</div>
+      <div class="nav-item" data-page="deudas" onclick="irA('deudas')"><span class="nav-icon">◌</span> Deudas</div>
+      <div class="nav-item" data-page="ahorros-inv" onclick="irA('ahorros-inv')"><span class="nav-icon">◉</span> Ahorros</div>
       <div class="nav-item" data-page="dolar" onclick="irA('dolar')"><span class="nav-icon">◎</span> Dólar</div>
       <div class="nav-section">Análisis</div>
       <div class="nav-item" data-page="asistente" onclick="irA('asistente')"><span class="nav-icon">◆</span> Asistente IA</div>
@@ -769,6 +800,31 @@
       </div>
     </div>
 
+    <!-- ═══ DEUDAS ═══ -->
+    <div class="page" id="page-deudas">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Deudas</div>
+          <div class="page-sub">Control de deudas y cuotas pendientes</div>
+        </div>
+        <button class="btn btn-accent" onclick="abrirModalDeuda(null)">+ Nueva deuda</button>
+      </div>
+      <div id="deudas-resumen" style="margin-bottom:4px"></div>
+      <div id="deudas-lista"></div>
+    </div>
+
+    <!-- ═══ AHORROS / INVERSIONES ═══ -->
+    <div class="page" id="page-ahorros-inv">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Ahorros e inversiones</div>
+          <div class="page-sub">Simulación de interés compuesto hasta fin de año</div>
+        </div>
+        <button class="btn btn-accent" onclick="abrirModalInv(null)">+ Nueva inversión</button>
+      </div>
+      <div id="inv-lista"></div>
+    </div>
+
     <!-- ═══ NOTAS ═══ -->
     <div class="page" id="page-notas">
       <div class="page-header">
@@ -881,6 +937,121 @@
     </div>
 
   </main>
+</div>
+
+<!-- MODAL DEUDA -->
+<div class="modal-overlay" id="modal-deuda" onclick="if(event.target===this)cerrar('modal-deuda')">
+  <div class="modal">
+    <div class="modal-title" id="mdeuda-titulo">Nueva deuda</div>
+    <div class="form-group">
+      <label class="form-label">Nombre de la deuda</label>
+      <input class="form-input" id="mdeuda-nombre" placeholder="Ej: Tarjeta Visa, Préstamo banco"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Total de la deuda</label>
+        <input class="form-input" id="mdeuda-total" type="number" placeholder="0"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cuota teórica mensual</label>
+        <input class="form-input" id="mdeuda-cuota" type="number" placeholder="0"/>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Total de cuotas</label>
+        <input class="form-input" id="mdeuda-cuotas-total" type="number" placeholder="Ej: 12"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cuotas ya pagadas (teóricas)</label>
+        <input class="form-input" id="mdeuda-cuotas-pagas" type="number" placeholder="0"/>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-accent" style="flex:1" onclick="saveDeuda()">Guardar</button>
+      <button class="btn" onclick="cerrar('modal-deuda')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PAGO REAL -->
+<div class="modal-overlay" id="modal-pago-real" onclick="if(event.target===this)cerrar('modal-pago-real')">
+  <div class="modal">
+    <div class="modal-title">Registrar pago real</div>
+    <input type="hidden" id="mpago-deuda-id"/>
+    <div class="form-group">
+      <label class="form-label">Monto pagado esta cuota</label>
+      <input class="form-input" id="mpago-monto" type="number" placeholder="0"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Fecha</label>
+      <input class="form-input" id="mpago-fecha" type="date"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nota (opcional)</label>
+      <input class="form-input" id="mpago-nota" placeholder="Ej: Pagué de más, cuota anticipada…"/>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-accent" style="flex:1" onclick="savePagoReal()">Registrar</button>
+      <button class="btn" onclick="cerrar('modal-pago-real')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL INVERSIÓN -->
+<div class="modal-overlay" id="modal-inv" onclick="if(event.target===this)cerrar('modal-inv')">
+  <div class="modal">
+    <div class="modal-title" id="minv-titulo">Nueva inversión</div>
+    <div class="form-group">
+      <label class="form-label">Nombre</label>
+      <input class="form-input" id="minv-nombre" placeholder="Ej: Plazo fijo Banco Nación, FCI Mercado Pago"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Capital inicial ($)</label>
+        <input class="form-input" id="minv-total" type="number" placeholder="0"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tasa de interés anual (%)</label>
+        <input class="form-input" id="minv-tasa" type="number" placeholder="Ej: 95" step="0.1"/>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-accent" style="flex:1" onclick="saveInv()">Guardar</button>
+      <button class="btn" onclick="cerrar('modal-inv')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MOVIMIENTO DE CAPITAL -->
+<div class="modal-overlay" id="modal-cap" onclick="if(event.target===this)cerrar('modal-cap')">
+  <div class="modal">
+    <div class="modal-title" id="mcap-titulo">Movimiento de capital</div>
+    <input type="hidden" id="mcap-inv-id"/>
+    <div class="form-group">
+      <label class="form-label">Tipo</label>
+      <select class="form-select" id="mcap-tipo">
+        <option value="ingreso">💰 Inyección de capital</option>
+        <option value="retiro">💸 Retiro de capital</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Monto ($)</label>
+      <input class="form-input" id="mcap-monto" type="number" placeholder="0"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Fecha</label>
+      <input class="form-input" id="mcap-fecha" type="date"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Descripción</label>
+      <input class="form-input" id="mcap-desc" placeholder="Ej: Venta de moto, retiro para gastos…"/>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px">
+      <button class="btn btn-accent" style="flex:1" onclick="saveMovCap()">Registrar</button>
+      <button class="btn" onclick="cerrar('modal-cap')">Cancelar</button>
+    </div>
+  </div>
 </div>
 
 <!-- MODAL META -->
@@ -1352,7 +1523,8 @@ function hideNotif(){document.getElementById('notif').classList.remove('show');i
 const PAGE_TITLES={
   tablero:'Buen día ✦',metas:'Mis metas',
   tareas:'Tareas',calendario:'Calendario',notas:'Notas',
-  finanzas:'Movimientos','fin-mensual':'Mes actual','fin-anual':'Vista anual','fin-graficos':'Gráficos',presupuesto:'Presupuesto mensual',dolar:'Dólar',
+  finanzas:'Movimientos','fin-mensual':'Mes actual','fin-anual':'Vista anual','fin-graficos':'Gráficos',
+  presupuesto:'Presupuesto mensual',deudas:'Deudas','ahorros-inv':'Ahorros e inversiones',dolar:'Dólar',
   asistente:'Asistente IA',progreso:'Progreso',historial:'Historial'
 };
 const PAGE_BTN={
@@ -1366,6 +1538,8 @@ const PAGE_BTN={
   'fin-anual':{txt:'',fn:''},
   'fin-graficos':{txt:'',fn:''},
   presupuesto:{txt:'',fn:''},
+  deudas:{txt:'+ Nueva deuda',fn:"abrirModalDeuda(null)"},
+  'ahorros-inv':{txt:'+ Nueva inversión',fn:"abrirModalInv(null)"},
   dolar:{txt:'',fn:''},
   asistente:{txt:'',fn:''},
   progreso:{txt:'',fn:''},
@@ -1407,6 +1581,8 @@ function irA(pagina){
   if(pagina==='notas'){ renderNotas(); }
   if(pagina==='dolar'){ fetchDolar(); renderDolarHistorial(); }
   if(pagina==='presupuesto'){ renderPresupuesto(); }
+  if(pagina==='deudas'){ renderDeudas(); }
+  if(pagina==='ahorros-inv'){ renderInversiones(); }
   if(pagina==='asistente'){ /* chat ya está listo */ }
   window.scrollTo(0,0);
 }
@@ -2609,6 +2785,366 @@ function renderPresupVsReal(movs){
         <div style="font-size:11px;color:var(--text3)">${totalOk ? fmt(totalPresup-totalReal)+' disponible' : fmt(totalReal-totalPresup)+' excedido'}</div>
       </div>
     </div>`;
+}
+
+// ── DEUDAS ───────────────────────────────────────────────────────────────
+let deudas = load('tb_deudas', []);
+let editDeudaId = null;
+
+function renderDeudas(){
+  const cont = document.getElementById('deudas-lista');
+  const res  = document.getElementById('deudas-resumen');
+
+  if(!deudas.length){
+    res.innerHTML = '';
+    cont.innerHTML = `<div class="deuda-empty">Sin deudas registradas. ¡Buen momento para agregar una!</div>`;
+    return;
+  }
+
+  const totalDeuda    = deudas.reduce((s,d) => s + d.total, 0);
+  const totalReal     = deudas.reduce((s,d) => s + (d.pagos||[]).reduce((ss,p)=>ss+p.monto,0), 0);
+  const totalTeorico  = deudas.reduce((s,d) => s + (d.cuota * d.cuotasPagas), 0);
+  const totalPendiente= Math.max(0, totalDeuda - totalReal);
+  const cuotaMes      = deudas.reduce((s,d) => s + (d.cuotasPagas < d.cuotasTotal ? d.cuota : 0), 0);
+
+  res.innerHTML = `
+    <div class="fin-stats-row" style="margin-bottom:16px">
+      <div class="fin-stat"><div class="fin-stat-label">Deuda total</div><div class="fin-stat-val neg">${fmt(totalDeuda)}</div></div>
+      <div class="fin-stat"><div class="fin-stat-label">Pagado real</div><div class="fin-stat-val pos">${fmt(totalReal)}</div></div>
+      <div class="fin-stat"><div class="fin-stat-label">Pendiente real</div><div class="fin-stat-val neg">${fmt(totalPendiente)}</div></div>
+      <div class="fin-stat"><div class="fin-stat-label">Cuota teórica mes</div><div class="fin-stat-val neu">${fmt(cuotaMes)}</div></div>
+    </div>`;
+
+  cont.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px">` +
+    deudas.map(d => {
+      const pagos        = d.pagos || [];
+      const pagoReal     = pagos.reduce((s,p)=>s+p.monto,0);
+      const pagoTeorico  = d.cuota * d.cuotasPagas;
+      const pendienteReal= Math.max(0, d.total - pagoReal);
+      const pctReal      = Math.round(pagoReal  / d.total * 100);
+      const pctTeorico   = Math.round(pagoTeorico / d.total * 100);
+      const restantes    = Math.max(0, d.cuotasTotal - d.cuotasPagas);
+      const colorReal    = pctReal >= 75 ? 'var(--green)' : pctReal >= 40 ? 'var(--accent)' : 'var(--blue)';
+      const terminada    = restantes === 0;
+
+      const historial = pagos.length ? `
+        <div style="margin-top:8px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:6px">Historial de pagos</div>
+          ${pagos.slice().reverse().map(p=>`
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
+              <div style="color:var(--text2)">${p.fecha} ${p.nota?'— <span style="color:var(--text3)">'+esc(p.nota)+'</span>':''}</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="color:var(--green)">${fmt(p.monto)}</div>
+                <button class="btn btn-icon btn-sm btn-danger" style="font-size:10px;padding:2px 5px" onclick="delPagoReal('${d.id}','${p.id}')">✕</button>
+              </div>
+            </div>`).join('')}
+        </div>` : '';
+
+      return `<div class="deuda-card">
+        <div class="deuda-header">
+          <div>
+            <div class="deuda-nombre">${esc(d.nombre)}</div>
+            ${terminada ? '<div style="font-size:11px;color:var(--green);margin-top:3px">✓ Cuotas completadas</div>'
+              : `<div style="font-size:11px;color:var(--text3);margin-top:3px">${restantes} cuota${restantes!==1?'s':''} teórica${restantes!==1?'s':''} restante${restantes!==1?'s':''}</div>`}
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-sm" style="background:rgba(94,184,138,.1);border-color:rgba(94,184,138,.3);color:var(--green)" onclick="abrirModalPagoReal('${d.id}')">+ Pago real</button>
+            <button class="btn btn-icon btn-sm" onclick="abrirModalDeuda('${d.id}')">✎</button>
+            <button class="btn btn-icon btn-sm btn-danger" onclick="delDeuda('${d.id}')">✕</button>
+          </div>
+        </div>
+        <div class="deuda-stats">
+          <div class="deuda-stat">
+            <div class="deuda-stat-label">Total deuda</div>
+            <div class="deuda-stat-val" style="color:var(--red)">${fmt(d.total)}</div>
+          </div>
+          <div class="deuda-stat">
+            <div class="deuda-stat-label">Cuota teórica</div>
+            <div class="deuda-stat-val">${fmt(d.cuota)}</div>
+          </div>
+          <div class="deuda-stat">
+            <div class="deuda-stat-label">Pendiente real</div>
+            <div class="deuda-stat-val" style="color:${pendienteReal===0?'var(--green)':'var(--red)'}">${fmt(pendienteReal)}</div>
+          </div>
+        </div>
+        <!-- Barra real -->
+        <div class="deuda-progress-wrap">
+          <div style="font-size:10px;color:var(--text3);margin-bottom:3px">Pagado real</div>
+          <div class="deuda-progress-track">
+            <div class="deuda-progress-fill" style="width:${pctReal}%;background:${colorReal}"></div>
+          </div>
+          <div class="deuda-progress-labels">
+            <span>${fmt(pagoReal)} de ${fmt(d.total)}</span>
+            <span style="color:${colorReal}">${pctReal}%</span>
+          </div>
+        </div>
+        <!-- Barra teórica -->
+        <div class="deuda-progress-wrap">
+          <div style="font-size:10px;color:var(--text3);margin-bottom:3px">Teórico (${d.cuotasPagas}/${d.cuotasTotal} cuotas)</div>
+          <div class="deuda-progress-track">
+            <div class="deuda-progress-fill" style="width:${pctTeorico}%;background:rgba(255,255,255,.2)"></div>
+          </div>
+          <div class="deuda-progress-labels">
+            <span>${fmt(pagoTeorico)} de ${fmt(d.total)}</span>
+            <span>${pctTeorico}%</span>
+          </div>
+        </div>
+        ${historial}
+      </div>`;
+    }).join('') + '</div>';
+}
+
+function abrirModalDeuda(id){
+  editDeudaId = id;
+  const d = id ? deudas.find(x=>x.id===id) : null;
+  document.getElementById('mdeuda-titulo').textContent    = d ? 'Editar deuda' : 'Nueva deuda';
+  document.getElementById('mdeuda-nombre').value          = d?.nombre || '';
+  document.getElementById('mdeuda-total').value           = d?.total || '';
+  document.getElementById('mdeuda-cuota').value           = d?.cuota || '';
+  document.getElementById('mdeuda-cuotas-total').value    = d?.cuotasTotal || '';
+  document.getElementById('mdeuda-cuotas-pagas').value    = d?.cuotasPagas ?? 0;
+  abrir('modal-deuda');
+}
+
+function saveDeuda(){
+  const nombre      = document.getElementById('mdeuda-nombre').value.trim();
+  const total       = parseFloat(document.getElementById('mdeuda-total').value)||0;
+  const cuota       = parseFloat(document.getElementById('mdeuda-cuota').value)||0;
+  const cuotasTotal = parseInt(document.getElementById('mdeuda-cuotas-total').value)||0;
+  const cuotasPagas = parseInt(document.getElementById('mdeuda-cuotas-pagas').value)||0;
+  if(!nombre || !total || !cuota || !cuotasTotal){ notif('⚠','Completá todos los campos'); return; }
+  if(editDeudaId){
+    const d = deudas.find(x=>x.id===editDeudaId);
+    Object.assign(d, {nombre,total,cuota,cuotasTotal,cuotasPagas});
+  } else {
+    deudas.push({id:uid(),nombre,total,cuota,cuotasTotal,cuotasPagas,pagos:[]});
+  }
+  save('tb_deudas', deudas);
+  cerrar('modal-deuda');
+  renderDeudas();
+  notif('✓','Deuda guardada');
+}
+
+function abrirModalPagoReal(deudaId){
+  document.getElementById('mpago-deuda-id').value = deudaId;
+  document.getElementById('mpago-monto').value    = '';
+  document.getElementById('mpago-fecha').value    = HOY_STR;
+  document.getElementById('mpago-nota').value     = '';
+  abrir('modal-pago-real');
+}
+
+function savePagoReal(){
+  const deudaId = document.getElementById('mpago-deuda-id').value;
+  const monto   = parseFloat(document.getElementById('mpago-monto').value)||0;
+  const fecha   = document.getElementById('mpago-fecha').value;
+  const nota    = document.getElementById('mpago-nota').value.trim();
+  if(!monto){ notif('⚠','Ingresá el monto'); return; }
+  const d = deudas.find(x=>x.id===deudaId);
+  if(!d) return;
+  if(!d.pagos) d.pagos = [];
+  d.pagos.push({id:uid(), monto, fecha, nota});
+  d.pagos.sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  // Avanzar cuota teórica
+  if(d.cuotasPagas < d.cuotasTotal) d.cuotasPagas++;
+  save('tb_deudas', deudas);
+  cerrar('modal-pago-real');
+  renderDeudas();
+  notif('✓','Pago registrado');
+}
+
+function delPagoReal(deudaId, pagoId){
+  const d = deudas.find(x=>x.id===deudaId);
+  if(!d) return;
+  d.pagos = (d.pagos||[]).filter(p=>p.id!==pagoId);
+  if(d.cuotasPagas > 0) d.cuotasPagas--;
+  save('tb_deudas', deudas);
+  renderDeudas();
+}
+
+function delDeuda(id){
+  if(!confirm('¿Eliminar esta deuda?')) return;
+  deudas = deudas.filter(x=>x.id!==id);
+  save('tb_deudas', deudas);
+  renderDeudas();
+}
+
+// ── AHORROS / INVERSIONES ────────────────────────────────────────────────
+let inversiones = load('tb_inversiones', []);
+let editInvId = null;
+
+const MESES_SIM = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+function capitalActualInv(inv){
+  const movs = inv.movimientos || [];
+  return inv.total + movs.reduce((s,m) => s + (m.tipo==='ingreso' ? m.monto : -m.monto), 0);
+}
+
+function renderInversiones(){
+  const cont = document.getElementById('inv-lista');
+  if(!inversiones.length){
+    cont.innerHTML = `<div class="inv-empty">Sin inversiones registradas todavía.</div>`;
+    return;
+  }
+  const ahorroMensual = presupuesto['Ahorros'] || 0;
+  cont.innerHTML = `<div style="display:flex;flex-direction:column;gap:16px">` +
+    inversiones.map(inv => {
+      const tasaMensual = inv.tasa / 100 / 12;
+      const mesActual   = new Date().getMonth();
+      const capitalHoy  = capitalActualInv(inv);
+      const movs        = inv.movimientos || [];
+
+      // Arrancamos con el capital inicial (sin movimientos) en el mes actual
+      // Los movimientos se aplican en el mes que corresponden
+      let capital = inv.total; // capital base sin movimientos futuros
+      let gananciaAcum = 0;
+      const filas = [];
+
+      for(let i = mesActual; i <= 11; i++){
+        // Inyecciones/retiros que caen en este mes
+        const movsEsMes = movs.filter(m => {
+          const [,mm] = m.fecha.split('-').map(Number);
+          return (mm-1) === i;
+        });
+        // Aplicar movimientos ANTES de calcular interés del mes
+        const deltaMov = movsEsMes.reduce((s,m) => s + (m.tipo==='ingreso' ? m.monto : -m.monto), 0);
+        capital += deltaMov;
+
+        // Aporte mensual del presupuesto (solo meses futuros)
+        if(i > mesActual) capital += ahorroMensual;
+
+        // Interés del mes — solo esto suma a la ganancia
+        const interes = capital * tasaMensual;
+        capital += interes;
+        gananciaAcum += interes;
+
+        filas.push({ mes: MESES_SIM[i], capital, interes, gananciaAcum, movsEsMes, deltaMov });
+      }
+
+      const proyectado    = filas[filas.length-1]?.capital || inv.total;
+      const gananciaTotal = filas[filas.length-1]?.gananciaAcum || 0;
+
+      const historial = movs.length ? `
+        <div style="margin-top:4px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:6px">Movimientos de capital</div>
+          ${movs.slice().reverse().map(m=>`
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
+              <div>
+                <span style="color:${m.tipo==='ingreso'?'var(--green)':'var(--red)'}">${m.tipo==='ingreso'?'↑ Inyección':'↓ Retiro'}</span>
+                <span style="color:var(--text3);margin-left:8px">${m.fecha}</span>
+                ${m.desc?`<span style="color:var(--text3);margin-left:8px">— ${m.desc}</span>`:''}
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="color:${m.tipo==='ingreso'?'var(--green)':'var(--red)'}">${m.tipo==='ingreso'?'+':'-'}${fmt(m.monto)}</div>
+                <button class="btn btn-icon btn-sm btn-danger" style="font-size:10px;padding:2px 5px" onclick="delMovCap('${inv.id}','${m.id}')">✕</button>
+              </div>
+            </div>`).join('')}
+        </div>` : '';
+
+      return `<div class="inv-card">
+        <div class="inv-header">
+          <div>
+            <div class="inv-nombre">${inv.nombre}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:3px">TNA ${inv.tasa}%</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-sm" style="background:rgba(94,184,138,.1);border-color:rgba(94,184,138,.3);color:var(--green)" onclick="abrirModalCap('${inv.id}','ingreso')">+ Capital</button>
+            <button class="btn btn-sm" style="background:rgba(224,96,74,.08);border-color:rgba(224,96,74,.2);color:var(--red)" onclick="abrirModalCap('${inv.id}','retiro')">− Retiro</button>
+            <button class="btn btn-icon btn-sm" onclick="abrirModalInv('${inv.id}')">✎</button>
+            <button class="btn btn-icon btn-sm btn-danger" onclick="delInv('${inv.id}')">✕</button>
+          </div>
+        </div>
+        <div class="inv-stats">
+          <div class="inv-stat"><div class="inv-stat-label">Capital actual</div><div class="inv-stat-val">${fmt(Math.round(capitalHoy))}</div></div>
+          <div class="inv-stat"><div class="inv-stat-label">Proyectado dic</div><div class="inv-stat-val" style="color:var(--green)">${fmt(Math.round(proyectado))}</div></div>
+          <div class="inv-stat"><div class="inv-stat-label">Ganancia estimada</div><div class="inv-stat-val" style="color:var(--green)">+${fmt(Math.round(gananciaTotal))}</div></div>
+        </div>
+        ${ahorroMensual ? `<div style="font-size:11px;color:var(--text3);margin-top:-4px">Incluye aporte mensual de ${fmt(ahorroMensual)} según presupuesto</div>` : ''}
+        <div style="overflow-x:auto">
+          <table class="sim-tabla">
+            <thead><tr><th>Mes</th><th>Capital</th><th>Interés del mes</th><th>Ganancia acum.</th></tr></thead>
+            <tbody>
+              ${filas.map(f => {
+                const movLabel = f.movsEsMes.length
+                  ? f.movsEsMes.map(m=>`<div style="font-size:10px;color:${m.tipo==='ingreso'?'var(--green)':'var(--red)'}">${m.tipo==='ingreso'?'+':'-'}${fmt(m.monto)}${m.desc?' ('+m.desc+')':''}</div>`).join('')
+                  : '';
+                return `<tr><td>${f.mes}${movLabel}</td><td>${fmt(Math.round(f.capital))}</td><td class="pos">+${fmt(Math.round(f.interes))}</td><td class="pos">+${fmt(Math.round(f.gananciaAcum))}</td></tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+        ${historial}
+      </div>`;
+    }).join('') + '</div>';
+}
+
+function abrirModalInv(id){
+  editInvId = id;
+  const inv = id ? inversiones.find(x=>x.id===id) : null;
+  document.getElementById('minv-titulo').textContent = inv ? 'Editar inversión' : 'Nueva inversión';
+  document.getElementById('minv-nombre').value = inv?.nombre || '';
+  document.getElementById('minv-total').value  = inv?.total  || '';
+  document.getElementById('minv-tasa').value   = inv?.tasa   || '';
+  abrir('modal-inv');
+}
+
+function saveInv(){
+  const nombre = document.getElementById('minv-nombre').value.trim();
+  const total  = parseFloat(document.getElementById('minv-total').value)||0;
+  const tasa   = parseFloat(document.getElementById('minv-tasa').value)||0;
+  if(!nombre || !total || !tasa){ notif('⚠','Completá todos los campos'); return; }
+  if(editInvId){
+    const inv = inversiones.find(x=>x.id===editInvId);
+    Object.assign(inv, {nombre,total,tasa});
+  } else {
+    inversiones.push({id:uid(),nombre,total,tasa,movimientos:[]});
+  }
+  save('tb_inversiones', inversiones);
+  cerrar('modal-inv');
+  renderInversiones();
+  notif('✓','Inversión guardada');
+}
+
+function abrirModalCap(invId, tipo){
+  document.getElementById('mcap-inv-id').value = invId;
+  document.getElementById('mcap-tipo').value   = tipo;
+  document.getElementById('mcap-titulo').textContent = tipo==='ingreso' ? 'Inyección de capital' : 'Retiro de capital';
+  document.getElementById('mcap-monto').value  = '';
+  document.getElementById('mcap-fecha').value  = HOY_STR;
+  document.getElementById('mcap-desc').value   = '';
+  abrir('modal-cap');
+}
+
+function saveMovCap(){
+  const invId = document.getElementById('mcap-inv-id').value;
+  const tipo  = document.getElementById('mcap-tipo').value;
+  const monto = parseFloat(document.getElementById('mcap-monto').value)||0;
+  const fecha = document.getElementById('mcap-fecha').value;
+  const desc  = document.getElementById('mcap-desc').value.trim();
+  if(!monto){ notif('⚠','Ingresá el monto'); return; }
+  const inv = inversiones.find(x=>x.id===invId);
+  if(!inv) return;
+  if(!inv.movimientos) inv.movimientos = [];
+  inv.movimientos.push({id:uid(), tipo, monto, fecha, desc});
+  inv.movimientos.sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  save('tb_inversiones', inversiones);
+  cerrar('modal-cap');
+  renderInversiones();
+  notif('✓', tipo==='ingreso' ? 'Capital inyectado' : 'Retiro registrado');
+}
+
+function delMovCap(invId, movId){
+  const inv = inversiones.find(x=>x.id===invId);
+  if(!inv) return;
+  inv.movimientos = (inv.movimientos||[]).filter(m=>m.id!==movId);
+  save('tb_inversiones', inversiones);
+  renderInversiones();
+}
+
+function delInv(id){
+  if(!confirm('¿Eliminar esta inversión?')) return;
+  inversiones = inversiones.filter(x=>x.id!==id);
+  save('tb_inversiones', inversiones);
+  renderInversiones();
 }
 
 // ── PRESUPUESTO ──────────────────────────────────────────────────────────
